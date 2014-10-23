@@ -1,0 +1,12 @@
+# Mt Donard - Image Database Informatiom
+#
+# Stephen Bates
+# PMC-Sierra, Nov 20th 2013
+
+The images used in the project were downloaded from the MIT SUN
+Database which is located at:
+
+http://people.csail.mit.edu/jxiao/SUN/
+
+The tarball is located in /home/images. The extracted files are
+located on the Princeton SSD at /mnt/princeton/images.
