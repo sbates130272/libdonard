@@ -1,0 +1,11 @@
+#!/usr/bin/env python
+
+if "LIB_CUDA" in bld.env:
+    bld.objects(source=bld.path.ant_glob("*.c", excl=["imrot.c"]) +
+                bld.path.ant_glob("*.cu"),
+                target="imrot_objs",
+                use="PTHREAD CUDART")
+
+    bld.program(source="imrot.c",
+                target="imrot",
+                use=" imrot_objs donard ARGCONFIG")

@@ -1,0 +1,12 @@
+#!/bin/bash
+
+BASEDIR=$(dirname $0)
+
+cd $BASEDIR/..
+
+VALGRINDOPTS="--error-exitcode=1 --leak-check=full "
+VALGRINDOPTS+="--suppressions=`pwd`/misc/valgrind.supp "
+VALGRINDOPTS+="--max-stackframe=10000000 "
+VALGRINDOPTS+="--gen-suppressions=all --log-file=valgrind.%%p.log"
+
+./waf --testcmd="valgrind $VALGRINDOPTS %s" distclean configure build

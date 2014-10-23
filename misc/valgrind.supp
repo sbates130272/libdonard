@@ -1,0 +1,478 @@
+{
+    __MagickReadImageBlob1
+    Memcheck:Value8
+    fun:_itoa_word
+    fun:vfprintf
+    fun:__vsnprintf_chk
+    fun:FormatLocaleStringList
+    fun:FormatLocaleString
+    fun:ReadOnePNGImage
+    fun:ReadPNGImage
+    fun:ReadImage
+    fun:BlobToImage
+    fun:MagickReadImageBlob
+}
+
+{
+    __MagickReadImageBlob2
+    Memcheck:Cond
+    fun:_itoa_word
+    fun:vfprintf
+    fun:__vsnprintf_chk
+    fun:FormatLocaleStringList
+    fun:FormatLocaleString
+    fun:ReadOnePNGImage
+    fun:ReadPNGImage
+    fun:ReadImage
+    fun:BlobToImage
+    fun:MagickReadImageBlob
+}
+
+{
+    __MagickReadImageBlob3
+    Memcheck:Cond
+    fun:vfprintf
+    fun:__vsnprintf_chk
+    fun:FormatLocaleStringList
+    fun:FormatLocaleString
+    fun:ReadOnePNGImage
+    fun:ReadPNGImage
+    fun:ReadImage
+    fun:BlobToImage
+    fun:MagickReadImageBlob
+}
+
+{
+    __CudaLeak1
+    Memcheck:Leak
+    fun:_Znwm
+    obj:/usr/lib/x86_64-linux-gnu/libcudart.so.5.0.35
+    obj:/usr/lib/x86_64-linux-gnu/libcudart.so.5.0.35
+    fun:__nptl_deallocate_tsd
+    fun:start_thread
+    fun:clone
+}
+
+{
+    __CudaLeak2
+    Memcheck:Leak
+    fun:_Znwm
+    obj:/usr/lib/x86_64-linux-gnu/libcudart.so.5.0.35
+    obj:/usr/lib/x86_64-linux-gnu/libcudart.so.5.0.35
+    obj:/usr/lib/x86_64-linux-gnu/libcudart.so.5.0.35
+    fun:_dl_fini
+    fun:__run_exit_handlers
+}
+
+{
+    __CudaLeak3
+    Memcheck:Leak
+    fun:calloc
+    obj:/usr/lib/x86_64-linux-gnu/libcuda.so.304.108
+    obj:/usr/lib/x86_64-linux-gnu/libcuda.so.304.108
+    obj:/usr/lib/x86_64-linux-gnu/libcuda.so.304.108
+    obj:/usr/lib/x86_64-linux-gnu/libcuda.so.304.108
+    obj:/usr/lib/x86_64-linux-gnu/libcuda.so.304.108
+    obj:/usr/lib/x86_64-linux-gnu/libcuda.so.304.108
+    obj:/usr/lib/x86_64-linux-gnu/libcuda.so.304.108
+    obj:/usr/lib/x86_64-linux-gnu/libcudart.so.5.0.35
+    obj:/usr/lib/x86_64-linux-gnu/libcudart.so.5.0.35
+    obj:/usr/lib/x86_64-linux-gnu/libcudart.so.5.0.35
+    obj:/usr/lib/x86_64-linux-gnu/libcudart.so.5.0.35
+}
+
+{
+    __CudaLeak4
+    Memcheck:Leak
+    fun:calloc
+    obj:/usr/lib/x86_64-linux-gnu/libcuda.so.304.108
+    obj:/usr/lib/x86_64-linux-gnu/libcuda.so.304.108
+    obj:/usr/lib/x86_64-linux-gnu/libcuda.so.304.108
+    obj:/usr/lib/x86_64-linux-gnu/libcuda.so.304.108
+    obj:/usr/lib/x86_64-linux-gnu/libcuda.so.304.108
+    obj:/usr/lib/x86_64-linux-gnu/libcuda.so.304.108
+    obj:/usr/lib/x86_64-linux-gnu/libcuda.so.304.108
+    obj:/usr/lib/x86_64-linux-gnu/libcuda.so.304.108
+    obj:/usr/lib/x86_64-linux-gnu/libcuda.so.304.108
+    obj:/usr/lib/x86_64-linux-gnu/libcudart.so.5.0.35
+    obj:/usr/lib/x86_64-linux-gnu/libcudart.so.5.0.35
+}
+
+{
+   __CudaLeak5
+   Memcheck:Leak
+   fun:calloc
+   obj:/usr/lib/x86_64-linux-gnu/libcuda.so.304.108
+   obj:/usr/lib/x86_64-linux-gnu/libcuda.so.304.108
+   obj:/usr/lib/x86_64-linux-gnu/libcuda.so.304.108
+   obj:/usr/lib/x86_64-linux-gnu/libcuda.so.304.108
+   obj:/usr/lib/x86_64-linux-gnu/libcuda.so.304.108
+   obj:/usr/lib/x86_64-linux-gnu/libcuda.so.304.108
+   obj:/usr/lib/x86_64-linux-gnu/libcuda.so.304.108
+   obj:/usr/lib/x86_64-linux-gnu/libcuda.so.304.108
+   obj:/usr/lib/x86_64-linux-gnu/libcuda.so.304.108
+   obj:/usr/lib/x86_64-linux-gnu/libcudart.so.5.0.35
+   obj:/usr/lib/x86_64-linux-gnu/libcudart.so.5.0.35
+}
+
+{
+    __CudaLeak6
+    Memcheck:Leak
+    fun:calloc
+    obj:/usr/lib/x86_64-linux-gnu/libcuda.so.304.108
+    obj:/usr/lib/x86_64-linux-gnu/libcuda.so.304.108
+    obj:/usr/lib/x86_64-linux-gnu/libcuda.so.304.108
+    obj:/usr/lib/x86_64-linux-gnu/libcuda.so.304.108
+    obj:/usr/lib/x86_64-linux-gnu/libcuda.so.304.108
+    obj:/usr/lib/x86_64-linux-gnu/libcuda.so.304.108
+    fun:cuInit
+    obj:/usr/lib/x86_64-linux-gnu/libcudart.so.5.0.35
+    obj:/usr/lib/x86_64-linux-gnu/libcudart.so.5.0.35
+    fun:cudaFree
+    obj:/usr/lib/x86_64-linux-gnu/libcufft.so.5.0.35
+}
+
+{
+    __CudaLeak7
+    Memcheck:Leak
+    fun:calloc
+    obj:/usr/lib/x86_64-linux-gnu/libcuda.so.304.108
+    obj:/usr/lib/x86_64-linux-gnu/libcuda.so.304.108
+    obj:/usr/lib/x86_64-linux-gnu/libcuda.so.304.108
+    obj:/usr/lib/x86_64-linux-gnu/libcuda.so.304.108
+    obj:/usr/lib/x86_64-linux-gnu/libcuda.so.304.108
+    obj:/usr/lib/x86_64-linux-gnu/libcuda.so.304.108
+    obj:/usr/lib/x86_64-linux-gnu/libcuda.so.304.108
+    obj:/usr/lib/x86_64-linux-gnu/libcuda.so.304.108
+    fun:cuInit
+    obj:/usr/lib/x86_64-linux-gnu/libcudart.so.5.0.35
+    obj:/usr/lib/x86_64-linux-gnu/libcudart.so.5.0.35
+}
+
+{
+    __CudaLeak8
+    Memcheck:Leak
+    fun:calloc
+    obj:/usr/lib/x86_64-linux-gnu/libcuda.so.304.108
+    obj:/usr/lib/x86_64-linux-gnu/libcuda.so.304.108
+    obj:/usr/lib/x86_64-linux-gnu/libcuda.so.304.108
+    obj:/usr/lib/x86_64-linux-gnu/libcuda.so.304.108
+    obj:/usr/lib/x86_64-linux-gnu/libcuda.so.304.108
+    obj:/usr/lib/x86_64-linux-gnu/libcuda.so.304.108
+    fun:cuInit
+    obj:/usr/lib/x86_64-linux-gnu/libcudart.so.5.0.35
+    obj:/usr/lib/x86_64-linux-gnu/libcudart.so.5.0.35
+    fun:cudaFree
+    obj:/usr/lib/x86_64-linux-gnu/libcufft.so.5.0.35
+}
+
+{
+    __CudaLeak9
+    Memcheck:Leak
+    fun:calloc
+    obj:/usr/lib/x86_64-linux-gnu/libcuda.so.304.108
+    obj:/usr/lib/x86_64-linux-gnu/libcuda.so.304.108
+    obj:/usr/lib/x86_64-linux-gnu/libcuda.so.304.108
+    obj:/usr/lib/x86_64-linux-gnu/libcuda.so.304.108
+    obj:/usr/lib/x86_64-linux-gnu/libcuda.so.304.108
+    fun:cuInit
+    obj:/usr/lib/x86_64-linux-gnu/libcudart.so.5.0.35
+    obj:/usr/lib/x86_64-linux-gnu/libcudart.so.5.0.35
+    fun:cudaFree
+    obj:/usr/lib/x86_64-linux-gnu/libcufft.so.5.0.35
+    fun:cufftCreateHandle
+}
+
+{
+    __CudaLeak10
+    Memcheck:Leak
+    fun:calloc
+    obj:/usr/lib/x86_64-linux-gnu/libcuda.so.304.108
+    obj:/usr/lib/x86_64-linux-gnu/libcuda.so.304.108
+    obj:/usr/lib/x86_64-linux-gnu/libcuda.so.304.108
+    obj:/usr/lib/x86_64-linux-gnu/libcuda.so.304.108
+    obj:/usr/lib/x86_64-linux-gnu/libcuda.so.304.108
+    obj:/usr/lib/x86_64-linux-gnu/libcuda.so.304.108
+    obj:/usr/lib/x86_64-linux-gnu/libcuda.so.304.108
+    obj:/usr/lib/x86_64-linux-gnu/libcuda.so.304.108
+    fun:cuInit
+    obj:/usr/lib/x86_64-linux-gnu/libcudart.so.5.0.35
+    obj:/usr/lib/x86_64-linux-gnu/libcudart.so.5.0.35
+}
+
+{
+   __CudaLeak11
+   Memcheck:Leak
+   fun:calloc
+   obj:/usr/lib/x86_64-linux-gnu/libcuda.so.304.108
+   obj:/usr/lib/x86_64-linux-gnu/libcuda.so.304.108
+   obj:/usr/lib/x86_64-linux-gnu/libcuda.so.304.108
+   fun:cuInit
+   obj:/usr/lib/x86_64-linux-gnu/libcudart.so.5.0.35
+   obj:/usr/lib/x86_64-linux-gnu/libcudart.so.5.0.35
+   fun:cudaFree
+   obj:/usr/lib/x86_64-linux-gnu/libcufft.so.5.0.35
+   fun:cufftCreateHandle
+   fun:cufftPlan2d
+}
+
+{
+   __CudaLeak12
+   Memcheck:Leak
+   fun:calloc
+   obj:/usr/lib/x86_64-linux-gnu/libcuda.so.304.108
+   obj:/usr/lib/x86_64-linux-gnu/libcuda.so.304.108
+   obj:/usr/lib/x86_64-linux-gnu/libcuda.so.304.108
+   obj:/usr/lib/x86_64-linux-gnu/libcuda.so.304.108
+   obj:/usr/lib/x86_64-linux-gnu/libcudart.so.5.0.35
+   obj:/usr/lib/x86_64-linux-gnu/libcudart.so.5.0.35
+   obj:/usr/lib/x86_64-linux-gnu/libcudart.so.5.0.35
+   obj:/usr/lib/x86_64-linux-gnu/libcudart.so.5.0.35
+   obj:/usr/lib/x86_64-linux-gnu/libcudart.so.5.0.35
+   fun:cudaFree
+   obj:/usr/lib/x86_64-linux-gnu/libcufft.so.5.0.35
+}
+
+{
+    __CudaLeak13
+    Memcheck:Leak
+    fun:calloc
+    obj:/usr/lib/x86_64-linux-gnu/libcuda.so.304.108
+    obj:/usr/lib/x86_64-linux-gnu/libcuda.so.304.108
+    obj:/usr/lib/x86_64-linux-gnu/libcuda.so.304.108
+    obj:/usr/lib/x86_64-linux-gnu/libcuda.so.304.108
+    obj:/usr/lib/x86_64-linux-gnu/libcuda.so.304.108
+    obj:/usr/lib/x86_64-linux-gnu/libcuda.so.304.108
+    obj:/usr/lib/x86_64-linux-gnu/libcuda.so.304.108
+    obj:/usr/lib/x86_64-linux-gnu/libcuda.so.304.108
+    obj:/usr/lib/x86_64-linux-gnu/libcudart.so.5.0.35
+    obj:/usr/lib/x86_64-linux-gnu/libcudart.so.5.0.35
+    obj:/usr/lib/x86_64-linux-gnu/libcudart.so.5.0.35
+}
+
+{
+    __CudaLeak14
+    Memcheck:Leak
+    fun:calloc
+    obj:/usr/lib/x86_64-linux-gnu/libcuda.so.304.108
+    obj:/usr/lib/x86_64-linux-gnu/libcuda.so.304.108
+    obj:/usr/lib/x86_64-linux-gnu/libcuda.so.304.108
+    obj:/usr/lib/x86_64-linux-gnu/libcuda.so.304.108
+    obj:/usr/lib/x86_64-linux-gnu/libcuda.so.304.108
+    obj:/usr/lib/x86_64-linux-gnu/libcuda.so.304.108
+    obj:/usr/lib/x86_64-linux-gnu/libcuda.so.304.108
+    obj:/usr/lib/x86_64-linux-gnu/libcuda.so.304.108
+    obj:/usr/lib/x86_64-linux-gnu/libcuda.so.304.108
+    obj:/usr/lib/x86_64-linux-gnu/libcuda.so.304.108
+    obj:/usr/lib/x86_64-linux-gnu/libcudart.so.5.0.35
+}
+
+{
+    __CudaLeak15
+    Memcheck:Leak
+    fun:calloc
+    obj:/usr/lib/x86_64-linux-gnu/libcuda.so.304.108
+    obj:/usr/lib/x86_64-linux-gnu/libcuda.so.304.108
+    obj:/usr/lib/x86_64-linux-gnu/libcuda.so.304.108
+    obj:/usr/lib/x86_64-linux-gnu/libcuda.so.304.108
+    obj:/usr/lib/x86_64-linux-gnu/libcuda.so.304.108
+    obj:/usr/lib/x86_64-linux-gnu/libcuda.so.304.108
+    obj:/usr/lib/x86_64-linux-gnu/libcuda.so.304.108
+    obj:/usr/lib/x86_64-linux-gnu/libcuda.so.304.108
+    obj:/usr/lib/x86_64-linux-gnu/libcuda.so.304.108
+    obj:/usr/lib/x86_64-linux-gnu/libcuda.so.304.108
+    obj:/usr/lib/x86_64-linux-gnu/libcudart.so.5.0.35
+}
+
+{
+    __CudaLeak16
+    Memcheck:Leak
+    fun:calloc
+    obj:/usr/lib/x86_64-linux-gnu/libcuda.so.304.108
+    obj:/usr/lib/x86_64-linux-gnu/libcuda.so.304.108
+    obj:/usr/lib/x86_64-linux-gnu/libcuda.so.304.108
+    obj:/usr/lib/x86_64-linux-gnu/libcuda.so.304.108
+    obj:/usr/lib/x86_64-linux-gnu/libcuda.so.304.108
+    obj:/usr/lib/x86_64-linux-gnu/libcuda.so.304.108
+    obj:/usr/lib/x86_64-linux-gnu/libcuda.so.304.108
+    obj:/usr/lib/x86_64-linux-gnu/libcuda.so.304.108
+    obj:/usr/lib/x86_64-linux-gnu/libcudart.so.5.0.35
+    obj:/usr/lib/x86_64-linux-gnu/libcudart.so.5.0.35
+    obj:/usr/lib/x86_64-linux-gnu/libcudart.so.5.0.35
+}
+
+{
+    __CudaLeak17
+    Memcheck:Leak
+    fun:calloc
+    obj:/usr/lib/x86_64-linux-gnu/libcuda.so.304.108
+    obj:/usr/lib/x86_64-linux-gnu/libcuda.so.304.108
+    obj:/usr/lib/x86_64-linux-gnu/libcuda.so.304.108
+    obj:/usr/lib/x86_64-linux-gnu/libcuda.so.304.108
+    obj:/usr/lib/x86_64-linux-gnu/libcuda.so.304.108
+    obj:/usr/lib/x86_64-linux-gnu/libcuda.so.304.108
+    obj:/usr/lib/x86_64-linux-gnu/libcuda.so.304.108
+    obj:/usr/lib/x86_64-linux-gnu/libcuda.so.304.108
+    obj:/usr/lib/x86_64-linux-gnu/libcuda.so.304.108
+    obj:/usr/lib/x86_64-linux-gnu/libcuda.so.304.108
+    obj:/usr/lib/x86_64-linux-gnu/libcuda.so.304.108
+}
+
+{
+    __CudaLeak18
+    Memcheck:Leak
+    fun:calloc
+    obj:/usr/lib/x86_64-linux-gnu/libcuda.so.304.108
+    obj:/usr/lib/x86_64-linux-gnu/libcuda.so.304.108
+    obj:/usr/lib/x86_64-linux-gnu/libcuda.so.304.108
+    obj:/usr/lib/x86_64-linux-gnu/libcuda.so.304.108
+    obj:/usr/lib/x86_64-linux-gnu/libcuda.so.304.108
+    obj:/usr/lib/x86_64-linux-gnu/libcuda.so.304.108
+    obj:/usr/lib/x86_64-linux-gnu/libcuda.so.304.108
+    obj:/usr/lib/x86_64-linux-gnu/libcuda.so.304.108
+    obj:/usr/lib/x86_64-linux-gnu/libcuda.so.304.108
+    obj:/usr/lib/x86_64-linux-gnu/libcuda.so.304.108
+    obj:/usr/lib/x86_64-linux-gnu/libcuda.so.304.108
+}
+
+{
+   __CudaLeak19
+   Memcheck:Leak
+   fun:calloc
+   obj:/usr/lib/x86_64-linux-gnu/libcuda.so.304.108
+   obj:/usr/lib/x86_64-linux-gnu/libcuda.so.304.108
+   obj:/usr/lib/x86_64-linux-gnu/libcuda.so.304.108
+   obj:/usr/lib/x86_64-linux-gnu/libcuda.so.304.108
+   obj:/usr/lib/x86_64-linux-gnu/libcuda.so.304.108
+   obj:/usr/lib/x86_64-linux-gnu/libcuda.so.304.108
+   obj:/usr/lib/x86_64-linux-gnu/libcuda.so.304.108
+   fun:cuStreamCreate
+   obj:/usr/lib/x86_64-linux-gnu/libcudart.so.5.0.35
+   fun:cudaStreamCreate
+   fun:stream_create
+}
+
+{
+   __CudaLeak20
+   Memcheck:Leak
+   fun:calloc
+   fun:_dl_allocate_tls
+   fun:pthread_create@@GLIBC_2.2.5
+   obj:/usr/lib/x86_64-linux-gnu/libcuda.so.304.108
+   obj:/usr/lib/x86_64-linux-gnu/libcuda.so.304.108
+   obj:/usr/lib/x86_64-linux-gnu/libcuda.so.304.108
+   obj:/usr/lib/x86_64-linux-gnu/libcuda.so.304.108
+   obj:/usr/lib/x86_64-linux-gnu/libcudart.so.5.0.35
+   obj:/usr/lib/x86_64-linux-gnu/libcudart.so.5.0.35
+   obj:/usr/lib/x86_64-linux-gnu/libcudart.so.5.0.35
+   obj:/usr/lib/x86_64-linux-gnu/libcudart.so.5.0.35
+   obj:/usr/lib/x86_64-linux-gnu/libcudart.so.5.0.35
+}
+
+{
+   __MagickLeak1
+   Memcheck:Leak
+   fun:calloc
+   fun:_dl_allocate_tls
+   fun:pthread_create@@GLIBC_2.2.5
+   fun:gomp_team_start
+   fun:CompositeImageChannel
+   fun:MergeImageLayers
+   fun:MagickMergeImageLayers
+}
+
+{
+   __CudaInitLeak1
+   Memcheck:Leak
+   fun:calloc
+   obj:/usr/lib/x86_64-linux-gnu/libcuda.so.304.108
+   obj:/usr/lib/x86_64-linux-gnu/libcuda.so.304.108
+   obj:/usr/lib/x86_64-linux-gnu/libcuda.so.304.108
+   obj:/usr/lib/x86_64-linux-gnu/libcuda.so.304.108
+   obj:/usr/lib/x86_64-linux-gnu/libcuda.so.304.108
+   obj:/usr/lib/x86_64-linux-gnu/libcuda.so.304.108
+   fun:cuInit
+}
+{
+   __CudaInitLeak2
+   Memcheck:Leak
+   fun:calloc
+   obj:/usr/lib/x86_64-linux-gnu/libcuda.so.304.108
+   obj:/usr/lib/x86_64-linux-gnu/libcuda.so.304.108
+   obj:/usr/lib/x86_64-linux-gnu/libcuda.so.304.108
+   fun:cuInit
+}
+{
+   __CudaMallocLeak
+   Memcheck:Leak
+   fun:calloc
+   obj:/usr/lib/x86_64-linux-gnu/libcuda.so.304.108
+   obj:/usr/lib/x86_64-linux-gnu/libcuda.so.304.108
+   obj:/usr/lib/x86_64-linux-gnu/libcuda.so.304.108
+   obj:/usr/lib/x86_64-linux-gnu/libcuda.so.304.108
+   obj:/usr/lib/x86_64-linux-gnu/libcudart.so.5.0.35
+   obj:/usr/lib/x86_64-linux-gnu/libcudart.so.5.0.35
+   obj:/usr/lib/x86_64-linux-gnu/libcudart.so.5.0.35
+   obj:/usr/lib/x86_64-linux-gnu/libcudart.so.5.0.35
+   obj:/usr/lib/x86_64-linux-gnu/libcudart.so.5.0.35
+   fun:cudaMalloc
+}
+{
+   __CudaInitLeak2
+   Memcheck:Leak
+   fun:calloc
+   obj:/usr/lib/x86_64-linux-gnu/libcuda.so.304.108
+   obj:/usr/lib/x86_64-linux-gnu/libcuda.so.304.108
+   obj:/usr/lib/x86_64-linux-gnu/libcuda.so.304.108
+   obj:/usr/lib/x86_64-linux-gnu/libcuda.so.304.108
+   obj:/usr/lib/x86_64-linux-gnu/libcuda.so.304.108
+   fun:cuInit
+}
+{
+   __CudaMemcpyAsync
+   Memcheck:Leak
+   fun:calloc
+   obj:/usr/lib/x86_64-linux-gnu/libcuda.so.304.108
+   obj:/usr/lib/x86_64-linux-gnu/libcuda.so.304.108
+   obj:/usr/lib/x86_64-linux-gnu/libcuda.so.304.108
+   obj:/usr/lib/x86_64-linux-gnu/libcuda.so.304.108
+   obj:/usr/lib/x86_64-linux-gnu/libcudart.so.5.0.35
+   obj:/usr/lib/x86_64-linux-gnu/libcudart.so.5.0.35
+   obj:/usr/lib/x86_64-linux-gnu/libcudart.so.5.0.35
+   obj:/usr/lib/x86_64-linux-gnu/libcudart.so.5.0.35
+   obj:/usr/lib/x86_64-linux-gnu/libcudart.so.5.0.35
+   fun:cudaMemcpyAsync
+}
+{
+   __CompareMemapedRegion
+   Memcheck:Cond
+   fun:bcmp
+   fun:main
+}
+{
+   __CompareMemapedRegion2
+   Memcheck:Cond
+   fun:main
+}
+{
+   __OddPrintf
+   Memcheck:Value8
+   fun:printf
+   fun:main
+}
+{
+   __CudaLeak21
+   Memcheck:Leak
+   fun:calloc
+   obj:/usr/lib/x86_64-linux-gnu/libcuda.so.304.108
+   obj:/usr/lib/x86_64-linux-gnu/libcuda.so.304.108
+   obj:/usr/lib/x86_64-linux-gnu/libcuda.so.304.108
+   obj:/usr/lib/x86_64-linux-gnu/libcuda.so.304.108
+   obj:/usr/lib/x86_64-linux-gnu/libcuda.so.304.108
+   obj:/usr/lib/x86_64-linux-gnu/libcuda.so.304.108
+   fun:cuMemAlloc_v2
+   obj:/usr/lib/x86_64-linux-gnu/libcudart.so.5.0.35
+   obj:/usr/lib/x86_64-linux-gnu/libcudart.so.5.0.35
+   fun:cudaMalloc
+   fun:main
+}

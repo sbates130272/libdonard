@@ -1,0 +1,89 @@
+#!/usr/bin/env python
+
+import os
+
+if "LIB_CUDA" in bld.env:
+    bld(features="c cprogram test",
+        source="cuda_test.cu",
+        target="cuda_test",
+        use="CUDART",
+        install_path=None)
+
+    bld.program(features="test",
+                source="filemap_test.c",
+                target="filemap_test",
+                use="donard_static",
+                install_path=None)
+
+    bld.program(features="test",
+                source="filemap_write_test.c",
+                target="filemap_write_test",
+                use="donard_static ARGCONFIG",
+                install_path=None)
+
+    bld.program(features="test",
+                source="image_cuda_test.c test_util.c",
+                target="image_cuda_test",
+                use="imgrep_objs donard_static",
+                install_path=None)
+
+    bld.program(features="test",
+                source="img_search_cuda_test.c test_util.c",
+                target="img_search_cuda_test",
+                use="imgrep_objs donard_static",
+                install_path=None)
+
+    bld.program(features="test",
+                source="mmap_test.c",
+                target="mmap_test",
+                use="donard_static",
+                install_path=None)
+
+    bld.program(source="pinpool_test.c",
+                target="pinpool_test",
+                use="donard_static",
+                install_path=None)
+
+    bld.program(features="test",
+                source="image_test.c test_util.c",
+                target="image_test",
+                use="imgrep_objs donard_static",
+                install_path=None)
+
+    bld.program(features="test",
+                source="img_search_test.c test_util.c",
+                target="img_search_test",
+                use="imgrep_objs donard_static",
+                install_path=None)
+
+    bld.program(features="test",
+                source="tiff_test.c test_util.c",
+                target="tiff_test",
+                use="imgrep_objs donard_static",
+                install_path=None)
+
+bld.program(features="test",
+            source="fifo_test.c",
+            target="fifo_test",
+            use="donard_static",
+            install_path=None)
+
+bld.program(features="test",
+            source="dirwalk_test.c",
+            target="dirwalk_test",
+            use="donard_static",
+            install_path=None)
+
+bld.program(features="test" if os.path.exists("/mnt/princeton/random_test3") else "",
+            source="nvme_dev_test.c",
+            target="nvme_dev_test",
+            use="donard_static",
+            install_path=None)
+
+
+if "LIB_OPENCL" in bld.env:
+    bld.program(features="test",
+                source="opencl_test.c opencl_test_kernel.cl",
+                target="opencl_test",
+                use="OPENCL",
+                install_path=None)

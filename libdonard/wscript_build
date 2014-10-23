@@ -1,0 +1,16 @@
+#!/usr/bin/env python
+
+excludes = []
+
+if "LIB_CUDA" not in bld.env:
+    excludes = ["pinpool.c", "filemap.c"]
+
+bld.stlib(source=bld.path.ant_glob("*.c", excl=excludes),
+          target="donard_static",
+          use="PTHREAD CUDART CUDA")
+
+bld.shlib(source=bld.path.ant_glob("*.c", excl=excludes),
+          target="donard",
+          use="PTHREAD CUDART CUDA")
+
+bld.install_files('${PREFIX}/include/donard', bld.path.ant_glob("*.h"))

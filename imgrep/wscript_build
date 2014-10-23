@@ -1,0 +1,13 @@
+#!/usr/bin/env python
+
+
+if "LIB_CUDA" in bld.env:
+
+    bld.objects(source=bld.path.ant_glob("*.c", excl=["imgrep.c"]) +
+                bld.path.ant_glob("*.cu"),
+                target="imgrep_objs",
+                use="MAGICKWAND FFTW3F PTHREAD CUDART CUFFT")
+
+    bld.program(source="imgrep.c",
+                target="imgrep",
+                use="imgrep_objs donard ARGCONFIG")

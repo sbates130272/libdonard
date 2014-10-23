@@ -1,0 +1,25 @@
+
+The donard library contains common code for writing applications that
+DMA memory directly between NVMe devices and Nvidia GPUs. This package
+contains the libdonard.so sources as well as some example applications.
+
+The examples include:
+
+* imgrep: Attempts to find a single needle sub-image in a large
+  haystack of images.
+
+* imrot: Rotates a large number of images, inplace, 180 degrees.
+
+There are also some executables for benchmarking the DMA transfer rates.
+These are called nvme2gpu_read and nvme2gpu_write. Similar programs
+are also provided for benchmarking DMA transfers to any mmappable PCI
+address. These are nvme2map_read and nvme2map_write.
+
+
+To build, run:
+
+  ./waf
+
+To install, run:
+
+  ./waf install
