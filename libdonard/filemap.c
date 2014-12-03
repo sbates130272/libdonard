@@ -24,6 +24,14 @@
 //     File mapper, which offers multiple ways to map a file to CPU or
 //     GPU memory.
 //
+//   Author: Hung-Wei Tseng
+//
+//   Date:   Dec 01 2014
+//
+//   Description:
+//   Updated the filemap_alloc_cuda_nvme function to support files 
+//   that are larger than the pinbuffer size.
+//
 ////////////////////////////////////////////////////////////////////////
 
 
@@ -41,13 +49,12 @@
 #include <sys/ioctl.h>
 #include <linux/fs.h>
 #include <sys/time.h>
-
+// Hung-Wei: We need this to have cudaMalloc work
 #include <cuda_runtime.h>
 
 #include <string.h>
 #include <stdlib.h>
 #include <stdio.h>
-
 static void free_munmap(struct filemap *fm)
 {
     munmap(fm->data, fm->length);
@@ -312,6 +319,8 @@ struct filemap *filemap_alloc_cuda_nvme(int fd, const char *fname)
 {
     int map_error;
     struct stat st;
+    // Hung-Wei: add a current pointer to the destination GPU memory address
+    void *current;
     if (fstat(fd, &st))
         return NULL;
 
@@ -345,15 +354,37 @@ struct filemap *filemap_alloc_cuda_nvme(int fd, const char *fname)
 
     unsigned long num_blocks = (st.st_size + st.st_blksize - 1) / st.st_blksize;
     fm->pinbuf = pinpool_alloc();
-    if (num_blocks * st.st_blksize > fm->pinbuf->bufsize) {
-        map_error = FILEMAP_FALLBACK_PINBUF_TOO_SMALL;
-        goto free_and_fallback;
+    // Hung-Wei: Allocate GPU global memory for the input data
+    if (cudaMalloc(&fm->data, fm->length) != cudaSuccess) {
+        errno = ENOMEM;
+        fprintf(stderr, "File exceeds available GPU memory size\n");
+        free(fm);
+        return NULL;
     }
 
-    fm->data = fm->pinbuf->address;
+    // The original donard code    
+    //if (num_blocks * st.st_blksize > fm->pinbuf->bufsize) {
+    //    map_error = FILEMAP_FALLBACK_PINBUF_TOO_SMALL;
+    //    goto free_and_fallback;
+    //}
+    //fm->data = fm->pinbuf->address;
 
-    unsigned long offset = 0;
+    current = fm->data;
+    //The original donard code
+    //unsigned long offset = 0;
+    //Hung-Wei: need more variables than just offset
+    unsigned long offset = 0, copied = 0, size_of_this_sector=0;
     for (int i = 0; i < sector_count; i++) {
+        // How big is the upcoming sector
+        size_of_this_sector = slist[i].count * 512;
+        // If the copied data is more than the pinbuffer size, copying it out.
+        if((offset + size_of_this_sector) > fm->pinbuf->bufsize) {
+            cudaMemcpy(current, fm->pinbuf->address, offset, cudaMemcpyDeviceToDevice);
+            current += offset;
+            copied += offset;
+            offset = 0;
+        }
+
         if (nvme_dev_gpu_read(devfd, slist[i].slba, slist[i].count,
                               fm->pinbuf, offset))
         {
@@ -361,9 +392,13 @@ struct filemap *filemap_alloc_cuda_nvme(int fd, const char *fname)
             pinpool_free(fm->pinbuf);
             goto free_and_fallback;
         }
-
-        offset += slist[i].count * 512;
+        // Hung-Wei: update the offset
+        offset += size_of_this_sector;
+        //Original donard
+        //offset += slist[i].count * 512;
     }
+    // copy the last pieces into the destionation
+    cudaMemcpy(current, fm->pinbuf->address, fm->length-copied, cudaMemcpyDeviceToDevice);
 
     return fm;
 
@@ -376,6 +411,7 @@ fallback:
     ret->map_error = map_error;
     return ret;
 }
+
 
 struct filemap *filemap_open_cuda_nvme(const char *fname)
 {
