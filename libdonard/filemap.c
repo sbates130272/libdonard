@@ -49,7 +49,6 @@
 #include <sys/ioctl.h>
 #include <linux/fs.h>
 #include <sys/time.h>
-// Hung-Wei: We need this to have cudaMalloc work
 #include <cuda_runtime.h>
 
 #include <string.h>
@@ -319,8 +318,6 @@ struct filemap *filemap_alloc_cuda_nvme(int fd, const char *fname)
 {
     int map_error;
     struct stat st;
-    // Hung-Wei: add a current pointer to the destination GPU memory address
-    void *current;
     if (fstat(fd, &st))
         return NULL;
 
@@ -354,52 +351,54 @@ struct filemap *filemap_alloc_cuda_nvme(int fd, const char *fname)
 
     unsigned long num_blocks = (st.st_size + st.st_blksize - 1) / st.st_blksize;
     fm->pinbuf = pinpool_alloc();
-    // Hung-Wei: Allocate GPU global memory for the input data
-    if (cudaMalloc(&fm->data, fm->length) != cudaSuccess) {
-        errno = ENOMEM;
-        fprintf(stderr, "File exceeds available GPU memory size\n");
-        free(fm);
-        return NULL;
-    }
-
-    // The original donard code    
-    //if (num_blocks * st.st_blksize > fm->pinbuf->bufsize) {
-    //    map_error = FILEMAP_FALLBACK_PINBUF_TOO_SMALL;
-    //    goto free_and_fallback;
-    //}
-    //fm->data = fm->pinbuf->address;
-
-    current = fm->data;
-    //The original donard code
-    //unsigned long offset = 0;
-    //Hung-Wei: need more variables than just offset
-    unsigned long offset = 0, copied = 0, size_of_this_sector=0;
-    for (int i = 0; i < sector_count; i++) {
-        // How big is the upcoming sector
-        size_of_this_sector = slist[i].count * 512;
-        // If the copied data is more than the pinbuffer size, copying it out.
-        if((offset + size_of_this_sector) > fm->pinbuf->bufsize) {
-            cudaMemcpy(current, fm->pinbuf->address, offset, cudaMemcpyDeviceToDevice);
-            current += offset;
-            copied += offset;
-            offset = 0;
-        }
-
-        if (nvme_dev_gpu_read(devfd, slist[i].slba, slist[i].count,
-                              fm->pinbuf, offset))
-        {
-            map_error = FILEMAP_FALLBACK_IOCTL_ERROR;
-            pinpool_free(fm->pinbuf);
+    //  If the file is larger than the pinbuffer
+    if (num_blocks * st.st_blksize > fm->pinbuf->bufsize) {
+        void *current;
+        unsigned long offset = 0, copied = 0, size_of_this_sector=0;
+        if (cudaMalloc(&fm->data, fm->length) != cudaSuccess) {
+            errno = ENOMEM;
+            fprintf(stderr, "File exceeds available GPU memory size\n");
             goto free_and_fallback;
         }
-        // Hung-Wei: update the offset
-        offset += size_of_this_sector;
-        //Original donard
-        //offset += slist[i].count * 512;
-    }
-    // copy the last pieces into the destionation
-    cudaMemcpy(current, fm->pinbuf->address, fm->length-copied, cudaMemcpyDeviceToDevice);
+        current = fm->data;
+        for (int i = 0; i < sector_count; i++) {
+            // How big is the upcoming sector
+            size_of_this_sector = slist[i].count * 512;
+            // If the copied data is more than the pinbuffer size, copying it out.
+            if((offset + size_of_this_sector) > fm->pinbuf->bufsize) {
+                cudaMemcpy(current, fm->pinbuf->address, offset, cudaMemcpyDeviceToDevice);
+                current += offset;
+                copied += offset;
+                offset = 0;
+            }
 
+            if (nvme_dev_gpu_read(devfd, slist[i].slba, slist[i].count, fm->pinbuf, offset))
+            {
+                map_error = FILEMAP_FALLBACK_IOCTL_ERROR;
+                pinpool_free(fm->pinbuf);
+                goto free_and_fallback;
+            }
+            offset += size_of_this_sector;
+        }
+        // copy the last pieces into the destionation
+        cudaMemcpy(current, fm->pinbuf->address, fm->length-copied, cudaMemcpyDeviceToDevice);        
+    }
+    else
+    {
+        unsigned long offset = 0;
+        fm->data = fm->pinbuf->address;
+
+        for (int i = 0; i < sector_count; i++) {
+            if (nvme_dev_gpu_read(devfd, slist[i].slba, slist[i].count,
+                                  fm->pinbuf, offset))
+            {
+                map_error = FILEMAP_FALLBACK_IOCTL_ERROR;
+                pinpool_free(fm->pinbuf);
+                goto free_and_fallback;
+            }
+            offset += slist[i].count * 512;
+        }
+    }
     return fm;
 
 free_and_fallback:
@@ -441,7 +440,6 @@ int filemap_write_cuda_nvme(struct filemap *fmap, int fd)
     if (devfd < 0) {
         return -1;
     }
-
     if ((ret = posix_fadvise(fd, 0, fmap->length, POSIX_FADV_DONTNEED)))
         return ret;
 
@@ -453,13 +451,13 @@ int filemap_write_cuda_nvme(struct filemap *fmap, int fd)
         return -1;
 
     unsigned long offset = 0;
+
     for (int i = 0; i < sector_count; i++) {
         if (nvme_dev_gpu_write(devfd, slist[i].slba, slist[i].count,
                                fmap->pinbuf, offset))
         {
             return -1;
         }
-
         offset += slist[i].count * 512;
     }
 
