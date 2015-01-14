@@ -29,8 +29,8 @@
 //   Date:   Dec 01 2014
 //
 //   Description:
-//   Updated the filemap_alloc_cuda_nvme function to support files
-//   that are larger than the pinbuffer size.
+//     Updated the filemap_alloc_cuda_nvme function to support files
+//     that are larger than the pinbuffer size.
 //
 ////////////////////////////////////////////////////////////////////////
 
@@ -49,11 +49,13 @@
 #include <sys/ioctl.h>
 #include <linux/fs.h>
 #include <sys/time.h>
+
 #include <cuda_runtime.h>
 
 #include <string.h>
 #include <stdlib.h>
 #include <stdio.h>
+
 static void free_munmap(struct filemap *fm)
 {
     munmap(fm->data, fm->length);
@@ -316,7 +318,7 @@ static void free_cuda_nvme(struct filemap *fm)
 
 struct filemap *filemap_alloc_cuda_nvme(int fd, const char *fname)
 {
-    int map_error;
+    int map_error=0;
     struct stat st;
     if (fstat(fd, &st))
         return NULL;
@@ -351,13 +353,12 @@ struct filemap *filemap_alloc_cuda_nvme(int fd, const char *fname)
 
     unsigned long num_blocks = (st.st_size + st.st_blksize - 1) / st.st_blksize;
     fm->pinbuf = pinpool_alloc();
-    //  If the file is larger than the pinbuffer
+    // If the file is larger than the pinbuffer
     if (num_blocks * st.st_blksize > fm->pinbuf->bufsize) {
         void *current;
         unsigned long offset = 0, copied = 0, size_of_this_sector=0;
         if (cudaMalloc(&fm->data, fm->length) != cudaSuccess) {
             errno = ENOMEM;
-            fprintf(stderr, "File exceeds available GPU memory size\n");
             goto free_and_fallback;
         }
         current = fm->data;
@@ -371,11 +372,7 @@ struct filemap *filemap_alloc_cuda_nvme(int fd, const char *fname)
             }
 
             if (nvme_dev_gpu_read(devfd, slist[i].slba, slist[i].count, fm->pinbuf, offset))
-            {
-                map_error = FILEMAP_FALLBACK_IOCTL_ERROR;
-                pinpool_free(fm->pinbuf);
-                goto free_and_fallback;
-            }
+                goto map_error_and_free;
             offset += size_of_this_sector;
         }
         cudaMemcpy(current, fm->pinbuf->address, fm->length-copied, cudaMemcpyDeviceToDevice);
@@ -388,15 +385,15 @@ struct filemap *filemap_alloc_cuda_nvme(int fd, const char *fname)
         for (int i = 0; i < sector_count; i++) {
             if (nvme_dev_gpu_read(devfd, slist[i].slba, slist[i].count,
                                   fm->pinbuf, offset))
-            {
-                map_error = FILEMAP_FALLBACK_IOCTL_ERROR;
-                pinpool_free(fm->pinbuf);
-                goto free_and_fallback;
-            }
+                goto map_error_and_free;
             offset += slist[i].count * 512;
         }
     }
     return fm;
+
+map_error_and_free:
+    map_error = FILEMAP_FALLBACK_IOCTL_ERROR;
+    pinpool_free(fm->pinbuf);
 
 free_and_fallback:
     free(fm);
@@ -420,6 +417,7 @@ struct filemap *filemap_open_cuda_nvme(const char *fname)
     return ret;
 }
 
+
 int filemap_write_cuda_nvme(struct filemap *fmap, int fd)
 {
     int ret;
@@ -437,6 +435,7 @@ int filemap_write_cuda_nvme(struct filemap *fmap, int fd)
     if (devfd < 0) {
         return -1;
     }
+
     if ((ret = posix_fadvise(fd, 0, fmap->length, POSIX_FADV_DONTNEED)))
         return ret;
 
@@ -448,13 +447,13 @@ int filemap_write_cuda_nvme(struct filemap *fmap, int fd)
         return -1;
 
     unsigned long offset = 0;
-
     for (int i = 0; i < sector_count; i++) {
         if (nvme_dev_gpu_write(devfd, slist[i].slba, slist[i].count,
                                fmap->pinbuf, offset))
         {
             return -1;
         }
+
         offset += slist[i].count * 512;
     }
 
