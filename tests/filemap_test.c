@@ -216,6 +216,20 @@ int main(int argc, char *argv[])
     if ((ret = test_cuda_nvme_map(fd, argv[1])))
         goto leave;
 
+    pinpool_deinit();
+
+    if (pinpool_init(1, 1*1024*1024)) {
+        perror("Could not initialize pin pool");
+        return -1;
+    }
+
+    printf("Testing large file support with 1MB pin buffer size\n");
+
+    if ((ret = test_cuda_nvme_map(fd, argv[1])))
+        goto leave;
+
+
+
 leave:
 
     pinpool_deinit();
