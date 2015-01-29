@@ -4,14 +4,14 @@ from waflib import Configure, Options, Logs
 Configure.autoconfig = True
 
 def options(opt):
-    opt.load("compiler_c gnu_dirs waf_unit_test")
+    opt.load("compiler_c compiler_cxx gnu_dirs waf_unit_test")
     opt.load("cuda version", tooldir="waftools")
 
     opt.add_option("--gprof", action="store_true",
                    help="Configure for use with gprof.")
 
 def configure(conf):
-    conf.load("compiler_c gnu_dirs waf_unit_test")
+    conf.load("compiler_c compiler_cxx gnu_dirs waf_unit_test")
 
     conf.check_cc(fragment="int main() { return 0; }\n")
 

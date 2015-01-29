@@ -8,6 +8,7 @@ if "LIB_CUDA" in bld.env:
                 target="imgrep_objs",
                 use="MAGICKWAND FFTW3F PTHREAD CUDART CUFFT")
 
-    bld.program(source="imgrep.c",
+    bld.program(features="cxxprogram",
+                source="imgrep.c",
                 target="imgrep",
                 use="imgrep_objs donard ARGCONFIG")

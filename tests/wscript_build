@@ -3,7 +3,7 @@
 import os
 
 if "LIB_CUDA" in bld.env:
-    bld(features="c cprogram test",
+    bld(features="c cxxprogram test",
         source="cuda_test.cu",
         target="cuda_test",
         use="CUDART",
@@ -21,13 +21,13 @@ if "LIB_CUDA" in bld.env:
                 use="donard_static ARGCONFIG",
                 install_path=None)
 
-    bld.program(features="test",
+    bld.program(features="test c cxxprogram",
                 source="image_cuda_test.c test_util.c",
                 target="image_cuda_test",
                 use="imgrep_objs donard_static",
                 install_path=None)
 
-    bld.program(features="test",
+    bld.program(features="test cxxprogram",
                 source="img_search_cuda_test.c test_util.c",
                 target="img_search_cuda_test",
                 use="imgrep_objs donard_static",
@@ -50,7 +50,7 @@ if "LIB_CUDA" in bld.env:
                 use="imgrep_objs donard_static",
                 install_path=None)
 
-    bld.program(features="test",
+    bld.program(features="test cxxprogram",
                 source="img_search_test.c test_util.c",
                 target="img_search_test",
                 use="imgrep_objs donard_static",

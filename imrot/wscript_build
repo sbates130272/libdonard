@@ -6,6 +6,7 @@ if "LIB_CUDA" in bld.env:
                 target="imrot_objs",
                 use="PTHREAD CUDART")
 
-    bld.program(source="imrot.c",
+    bld.program(features="cxxprogram",
+                source="imrot.c",
                 target="imrot",
                 use=" imrot_objs donard ARGCONFIG")
