@@ -331,28 +331,29 @@ static struct filemap *alloc_cuda_nvme_large(int fd, const char *fname,
 
     fm->free = free_cuda_nvme_large;
 
-    unsigned long offset = 0, copied = 0, size_of_this_sector=0;
-    void *current = fm->data;
+    unsigned long max_lbas = fm->pinbuf->bufsize / 512;
+
+    unsigned char *current = fm->data;
     for (int i = 0; i < sector_count; i++) {
-        size_of_this_sector = slist[i].count * 512;
+        unsigned long slba = slist[i].slba;
+        unsigned long count = slist[i].count;
 
-        if((offset + size_of_this_sector) > fm->pinbuf->bufsize) {
-            cudaMemcpy(current, fm->pinbuf->address, offset,
+        while (count) {
+            unsigned long c = count;
+            if (c > max_lbas)
+                c = max_lbas;
+
+            if (nvme_dev_gpu_read(devfd, slba, c, fm->pinbuf, 0))
+                goto map_error_and_free;
+
+            slba += c;
+            count -= c;
+
+            cudaMemcpy(current, fm->pinbuf->address, c*512,
                        cudaMemcpyDeviceToDevice);
-            current += offset;
-            copied += offset;
-            offset = 0;
+            current += c*512;
         }
-
-        if (nvme_dev_gpu_read(devfd, slist[i].slba, slist[i].count,
-                              fm->pinbuf, offset))
-            goto map_error_and_free;
-
-        offset += size_of_this_sector;
     }
-
-    cudaMemcpy(current, fm->pinbuf->address, fm->length-copied,
-               cudaMemcpyDeviceToDevice);
 
     pinpool_free(fm->pinbuf);
     fm->pinbuf = NULL;
