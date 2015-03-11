@@ -41,7 +41,8 @@ struct nvme_dev_sector {
 };
 
 int nvme_dev_get_sector_list(int fd, struct stat *st,
-                             struct nvme_dev_sector *slist);
+                             struct nvme_dev_sector **slist,
+                             size_t max_size);
 
 int nvme_dev_read(int devfd, int slba, int nblocks, void *dest);
 int nvme_dev_write(int devfd, int slba, int nblocks, const void *src);

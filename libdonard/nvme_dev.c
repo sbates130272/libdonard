@@ -103,18 +103,30 @@ int nvme_dev_find(dev_t dev)
 }
 
 int nvme_dev_get_sector_list(int fd, struct stat *st,
-                             struct nvme_dev_sector *slist)
+                             struct nvme_dev_sector **slist_p,
+                             size_t max_size)
 {
     int blk_size = st->st_blksize / 512;
-    unsigned long num_blocks = (st->st_size + st->st_blksize - 1) / st->st_blksize;
+    size_t size = st->st_size;
+    if (max_size && size > max_size)
+        size = max_size;
+
+    unsigned long num_blocks = (size + st->st_blksize - 1) / st->st_blksize;
 
     int list_count = 1;
+
+    struct nvme_dev_sector *slist;
+    *slist_p = slist = malloc(num_blocks * sizeof(*slist));
+    if (slist == NULL)
+        return -1;
 
     for (int i = 0; i < num_blocks; i++) {
         unsigned long blknum = i;
 
-        if (ioctl(fd, FIBMAP, &blknum) < 0)
+        if (ioctl(fd, FIBMAP, &blknum) < 0) {
+            free(slist);
             return -1;
+        }
 
         //Seems we can't transfer more than 65536 LBAs at once so
         // in that case we split it into multiple transfers
@@ -207,8 +219,8 @@ int nvme_dev_read_fd(int fd, void *buf, size_t bufsize)
     if (devfd < 0)
         return -1;
 
-    struct nvme_dev_sector slist[st.st_blocks / (st.st_blksize / 512)];
-    int sector_count = nvme_dev_get_sector_list(fd, &st, slist);
+    struct nvme_dev_sector *slist;
+    int sector_count = nvme_dev_get_sector_list(fd, &st, &slist, bufsize);
     if (sector_count < 0) {
         errno = EPERM;
         return -1;
@@ -229,14 +241,19 @@ int nvme_dev_read_fd(int fd, void *buf, size_t bufsize)
         if (!count) break;
 
         if (nvme_dev_read(devfd, slist[i].slba, count, dest))
-            return -1;
+            goto free_and_exit;
 
         dest += slist[i].count * 512;
         bytes += slist[i].count * 512;
         num_blocks -= slist[i].count;
     }
 
+    free(slist);
     return bytes;
+
+free_and_exit:
+    free(slist);
+    return -1;
 }
 
 int nvme_dev_read_file(const char *fname, void *buf, size_t bufsize)
@@ -264,8 +281,8 @@ int nvme_dev_write_fd(int fd, const void *buf, size_t bufsize)
     if (posix_fadvise(fd, 0, st.st_size, POSIX_FADV_DONTNEED))
         return -1;
 
-    struct nvme_dev_sector slist[st.st_blocks / (st.st_blksize / 512)];
-    int sector_count = nvme_dev_get_sector_list(fd, &st, slist);
+    struct nvme_dev_sector *slist;
+    int sector_count = nvme_dev_get_sector_list(fd, &st, &slist, bufsize);
     if (sector_count < 0)
         return -1;
 
@@ -281,7 +298,7 @@ int nvme_dev_write_fd(int fd, const void *buf, size_t bufsize)
         if (!count) break;
 
         if (nvme_dev_write(devfd, slist[i].slba, slist[i].count, cbuf))
-            return -1;
+            goto error_exit;
 
         num_blocks -= slist[i].count;
         wrote += slist[i].count * 512;
@@ -291,7 +308,12 @@ int nvme_dev_write_fd(int fd, const void *buf, size_t bufsize)
     //Updated modification and access times
     futimes(fd, NULL);
 
+    free(slist);
     return wrote;
+
+error_exit:
+    free(slist);
+    return -1;
 }
 
 int nvme_dev_write_file(const char *fname, const void *buf, size_t bufsize)

@@ -484,8 +484,8 @@ int filemap_write_cuda_nvme(struct filemap *fmap, int fd)
         return ret;
 
 
-    struct nvme_dev_sector slist[st.st_blocks / (st.st_blksize / 512)];
-    int sector_count = nvme_dev_get_sector_list(fd, &st, slist);
+    struct nvme_dev_sector *slist;
+    int sector_count = nvme_dev_get_sector_list(fd, &st, &slist, 0);
 
     if (sector_count < 0)
         return -1;
@@ -495,6 +495,7 @@ int filemap_write_cuda_nvme(struct filemap *fmap, int fd)
         if (nvme_dev_gpu_write(devfd, slist[i].slba, slist[i].count,
                                fmap->pinbuf, offset))
         {
+            free(slist);
             return -1;
         }
 
@@ -504,6 +505,7 @@ int filemap_write_cuda_nvme(struct filemap *fmap, int fd)
     //Updated modification and access times
     futimes(fd, NULL);
 
+    free(slist);
     return 0;
 }
 
