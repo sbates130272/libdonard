@@ -39,7 +39,10 @@
 static int test_read(const char *fname)
 {
     struct stat st;
-    stat(fname, &st);
+    if (stat(fname, &st)) {
+        perror(fname);
+        return -1;
+    }
 
     size_t bufsize = st.st_size + 4096;
 
@@ -80,15 +83,20 @@ static int test_write(const char *fname)
 
     int wrote = nvme_dev_write_file(fname, data, count * sizeof(*data));
 
-    if (wrote < 0)
+    if (wrote < 0) {
+        free(data);
         return -1;
+    }
 
     int fd = open(fname, O_RDONLY);
     void *data2 = malloc(wrote);
     read(fd, data2, wrote);
     close(fd);
 
-    return memcmp(data, data2, wrote);
+    int ret = memcmp(data, data2, wrote);
+    free(data2);
+    free(data);
+    return ret;
 }
 
 int main(int argc, char *argv[])
