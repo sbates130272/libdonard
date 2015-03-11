@@ -117,44 +117,6 @@ struct filemap *filemap_open_local(const char *fname)
     return ret;
 }
 
-struct sector {
-    unsigned long slba;
-    unsigned long count;
-};
-
-static int get_sector_list(int fd, struct stat *st, struct sector *slist)
-{
-    int blk_size = st->st_blksize / 512;
-    unsigned long num_blocks = (st->st_size + st->st_blksize - 1) / st->st_blksize;
-
-    int list_count = 1;
-
-    for (int i = 0; i < num_blocks; i++) {
-        unsigned long blknum = i;
-
-        if (ioctl(fd, FIBMAP, &blknum) < 0)
-            return -1;
-
-        //Seems we can't transfer more than 65536 LBAs at once so
-        // in that case we split it into multiple transfers
-        if (i != 0 && blknum * blk_size == slist->slba + slist->count &&
-            slist->count + blk_size <= 65536) {
-            slist->count += blk_size;
-            continue;
-        }
-
-        if (i != 0) {
-            slist++;
-            list_count++;
-        }
-
-        slist->slba = blknum * blk_size;
-        slist->count = blk_size;
-    }
-
-    return list_count;
-}
-
 static void free_local_nvme(struct filemap *fm)
 {
     free(fm->data);
@@ -176,7 +138,7 @@ struct filemap *filemap_alloc_local_nvme(int fd, const char *fname)
     if (fstat(fd, &st))
         return NULL;
 
-    struct sector slist[st.st_blocks / (st.st_blksize / 512)];
+    struct nvme_dev_sector *slist = NULL;
 
     int devfd = nvme_dev_find(st.st_dev);
     if (devfd < 0) {
@@ -197,7 +159,7 @@ struct filemap *filemap_alloc_local_nvme(int fd, const char *fname)
     fm->free = free_local_nvme;
     copy_filename(fm, fname);
 
-    int sector_count = get_sector_list(fd, &st, slist);
+    int sector_count = nvme_dev_get_sector_list(fd, &st, &slist, 0);
 
     if (sector_count < 0) {
         map_error = FILEMAP_FALLBACK_NOPERM_FIBMAP;
@@ -215,17 +177,22 @@ struct filemap *filemap_alloc_local_nvme(int fd, const char *fname)
         if (nvme_dev_read(devfd, slist[i].slba, slist[i].count, dest)) {
             map_error = FILEMAP_FALLBACK_IOCTL_ERROR;
             free(fm->data);
-            goto free_and_fallback;
+            goto free_slist_and_fallback;
         }
 
         dest += slist[i].count * 512;
     }
 
+    free(slist);
     return fm;
 
 exit_error_free:
+    free(slist);
     free(fm);
     return NULL;
+
+free_slist_and_fallback:
+    free(slist);
 
 free_and_fallback:
     free(fm);
@@ -319,7 +286,7 @@ static void free_cuda_nvme_large(struct filemap *fm)
 static struct filemap *alloc_cuda_nvme_large(int fd, const char *fname,
                                              int devfd, struct filemap *fm,
                                              unsigned long num_blocks,
-                                             struct sector *slist,
+                                             struct nvme_dev_sector *slist,
                                              int sector_count)
 {
     int map_error = 0;
@@ -391,7 +358,7 @@ struct filemap *filemap_alloc_cuda_nvme(int fd, const char *fname)
     if (fstat(fd, &st))
         return NULL;
 
-    struct sector slist[st.st_blocks / (st.st_blksize / 512)];
+    struct nvme_dev_sector *slist;
 
     int devfd = nvme_dev_find(st.st_dev);
     if (devfd < 0) {
@@ -402,7 +369,7 @@ struct filemap *filemap_alloc_cuda_nvme(int fd, const char *fname)
         goto fallback;
     }
 
-    int sector_count = get_sector_list(fd, &st, slist);
+    int sector_count = nvme_dev_get_sector_list(fd, &st, &slist, 0);
 
     if (sector_count < 0) {
         map_error = FILEMAP_FALLBACK_NOPERM_FIBMAP;
@@ -412,8 +379,10 @@ struct filemap *filemap_alloc_cuda_nvme(int fd, const char *fname)
     unsigned long num_blocks = (st.st_size + st.st_blksize - 1) / st.st_blksize;
 
     struct filemap *fm = malloc(sizeof(*fm));
-    if (fm == NULL)
+    if (fm == NULL) {
+        free(slist);
         return NULL;
+    }
 
     fm->map_error = 0;
     fm->length = st.st_size;
@@ -423,9 +392,12 @@ struct filemap *filemap_alloc_cuda_nvme(int fd, const char *fname)
     fm->pinbuf = pinpool_alloc();
     fm->data = fm->pinbuf->address;
 
-    if (num_blocks * st.st_blksize > fm->pinbuf->bufsize)
-        return alloc_cuda_nvme_large(fd, fname, devfd, fm, num_blocks,
-                                     slist, sector_count);
+    if (num_blocks * st.st_blksize > fm->pinbuf->bufsize) {
+        struct filemap * rt = alloc_cuda_nvme_large(fd, fname, devfd, fm, num_blocks,
+                                                    slist, sector_count);
+        free(slist);
+        return rt;
+    }
 
     unsigned long offset = 0;
     for (int i = 0; i < sector_count; i++) {
@@ -435,11 +407,13 @@ struct filemap *filemap_alloc_cuda_nvme(int fd, const char *fname)
         offset += slist[i].count * 512;
     }
 
+    free(slist);
     return fm;
 
 map_error_and_free:
     map_error = FILEMAP_FALLBACK_IOCTL_ERROR;
     pinpool_free(fm->pinbuf);
+    free(slist);
     free(fm);
 
 fallback:
