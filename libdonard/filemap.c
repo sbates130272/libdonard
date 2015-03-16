@@ -56,6 +56,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 
+
 static void free_munmap(struct filemap *fm)
 {
     munmap(fm->data, fm->length);
@@ -117,6 +118,44 @@ struct filemap *filemap_open_local(const char *fname)
     return ret;
 }
 
+struct sector {
+    unsigned long slba;
+    unsigned long count;
+};
+
+static int get_sector_list(int fd, struct stat *st, struct sector *slist)
+{
+    int blk_size = st->st_blksize / 512;
+    unsigned long num_blocks = (st->st_size + st->st_blksize - 1) / st->st_blksize;
+
+    int list_count = 1;
+
+    for (int i = 0; i < num_blocks; i++) {
+        unsigned long blknum = i;
+
+        if (ioctl(fd, FIBMAP, &blknum) < 0)
+            return -1;
+
+        //Seems we can't transfer more than 65536 LBAs at once so
+        // in that case we split it into multiple transfers
+        if (i != 0 && blknum * blk_size == slist->slba + slist->count &&
+            slist->count + blk_size <= 65536) {
+            slist->count += blk_size;
+            continue;
+        }
+
+        if (i != 0) {
+            slist++;
+            list_count++;
+        }
+
+        slist->slba = blknum * blk_size;
+        slist->count = blk_size;
+    }
+
+    return list_count;
+}
+
 static void free_local_nvme(struct filemap *fm)
 {
     free(fm->data);
@@ -138,7 +177,7 @@ struct filemap *filemap_alloc_local_nvme(int fd, const char *fname)
     if (fstat(fd, &st))
         return NULL;
 
-    struct nvme_dev_sector *slist = NULL;
+    struct sector slist[st.st_blocks / (st.st_blksize / 512)];
 
     int devfd = nvme_dev_find(st.st_dev);
     if (devfd < 0) {
@@ -159,7 +198,7 @@ struct filemap *filemap_alloc_local_nvme(int fd, const char *fname)
     fm->free = free_local_nvme;
     copy_filename(fm, fname);
 
-    int sector_count = nvme_dev_get_sector_list(fd, &st, &slist, 0);
+    int sector_count = get_sector_list(fd, &st, slist);
 
     if (sector_count < 0) {
         map_error = FILEMAP_FALLBACK_NOPERM_FIBMAP;
@@ -177,22 +216,17 @@ struct filemap *filemap_alloc_local_nvme(int fd, const char *fname)
         if (nvme_dev_read(devfd, slist[i].slba, slist[i].count, dest)) {
             map_error = FILEMAP_FALLBACK_IOCTL_ERROR;
             free(fm->data);
-            goto free_slist_and_fallback;
+            goto free_and_fallback;
         }
 
         dest += slist[i].count * 512;
     }
 
-    free(slist);
     return fm;
 
 exit_error_free:
-    free(slist);
     free(fm);
     return NULL;
-
-free_slist_and_fallback:
-    free(slist);
 
 free_and_fallback:
     free(fm);
@@ -286,7 +320,7 @@ static void free_cuda_nvme_large(struct filemap *fm)
 static struct filemap *alloc_cuda_nvme_large(int fd, const char *fname,
                                              int devfd, struct filemap *fm,
                                              unsigned long num_blocks,
-                                             struct nvme_dev_sector *slist,
+                                             struct sector *slist,
                                              int sector_count)
 {
     int map_error = 0;
@@ -341,6 +375,7 @@ free_and_fallback:
     return ret;
 }
 
+
 static void free_cuda_nvme(struct filemap *fm)
 {
     pinpool_free(fm->pinbuf);
@@ -358,7 +393,7 @@ struct filemap *filemap_alloc_cuda_nvme(int fd, const char *fname)
     if (fstat(fd, &st))
         return NULL;
 
-    struct nvme_dev_sector *slist;
+    struct sector slist[st.st_blocks / (st.st_blksize / 512)];
 
     int devfd = nvme_dev_find(st.st_dev);
     if (devfd < 0) {
@@ -369,7 +404,7 @@ struct filemap *filemap_alloc_cuda_nvme(int fd, const char *fname)
         goto fallback;
     }
 
-    int sector_count = nvme_dev_get_sector_list(fd, &st, &slist, 0);
+    int sector_count = get_sector_list(fd, &st, slist);
 
     if (sector_count < 0) {
         map_error = FILEMAP_FALLBACK_NOPERM_FIBMAP;
@@ -379,10 +414,8 @@ struct filemap *filemap_alloc_cuda_nvme(int fd, const char *fname)
     unsigned long num_blocks = (st.st_size + st.st_blksize - 1) / st.st_blksize;
 
     struct filemap *fm = malloc(sizeof(*fm));
-    if (fm == NULL) {
-        free(slist);
+    if (fm == NULL)
         return NULL;
-    }
 
     fm->map_error = 0;
     fm->length = st.st_size;
@@ -392,12 +425,9 @@ struct filemap *filemap_alloc_cuda_nvme(int fd, const char *fname)
     fm->pinbuf = pinpool_alloc();
     fm->data = fm->pinbuf->address;
 
-    if (num_blocks * st.st_blksize > fm->pinbuf->bufsize) {
-        struct filemap * rt = alloc_cuda_nvme_large(fd, fname, devfd, fm, num_blocks,
-                                                    slist, sector_count);
-        free(slist);
-        return rt;
-    }
+    if (num_blocks * st.st_blksize > fm->pinbuf->bufsize)
+        return alloc_cuda_nvme_large(fd, fname, devfd, fm, num_blocks,
+                                     slist, sector_count);
 
     unsigned long offset = 0;
     for (int i = 0; i < sector_count; i++) {
@@ -407,13 +437,11 @@ struct filemap *filemap_alloc_cuda_nvme(int fd, const char *fname)
         offset += slist[i].count * 512;
     }
 
-    free(slist);
     return fm;
 
 map_error_and_free:
     map_error = FILEMAP_FALLBACK_IOCTL_ERROR;
     pinpool_free(fm->pinbuf);
-    free(slist);
     free(fm);
 
 fallback:
@@ -458,8 +486,8 @@ int filemap_write_cuda_nvme(struct filemap *fmap, int fd)
         return ret;
 
 
-    struct nvme_dev_sector *slist;
-    int sector_count = nvme_dev_get_sector_list(fd, &st, &slist, 0);
+    struct nvme_dev_sector slist[st.st_blocks / (st.st_blksize / 512)];
+    int sector_count = nvme_dev_get_sector_list(fd, &st, slist);
 
     if (sector_count < 0)
         return -1;
@@ -469,7 +497,6 @@ int filemap_write_cuda_nvme(struct filemap *fmap, int fd)
         if (nvme_dev_gpu_write(devfd, slist[i].slba, slist[i].count,
                                fmap->pinbuf, offset))
         {
-            free(slist);
             return -1;
         }
 
@@ -479,7 +506,6 @@ int filemap_write_cuda_nvme(struct filemap *fmap, int fd)
     //Updated modification and access times
     futimes(fd, NULL);
 
-    free(slist);
     return 0;
 }
 
@@ -502,4 +528,231 @@ const char * filemap_map_error_string(int map_error)
         return "Unkown Error.";
     }
 
+}
+
+#include "fifo.h"
+void *nvmed_read_thread(void *t);
+
+struct nvmed_task
+{
+    int devfd;
+    void *dest;
+    unsigned long slba;
+    unsigned long count;
+    unsigned long size;
+};
+
+struct nvmed_thread_parameter
+{
+    struct fifo *nvmed_tasks_fifo;
+    int *number_of_remaining_tasks;
+};
+
+inline void atomic_increment(volatile int *pw)
+{
+	  __asm (
+	       "lock\n\t"
+	       "incl %0":
+	       "=m"(*pw): // output (%0)
+	       "m"(*pw): // input (%1)
+	       "cc" // clobbers
+	       );
+}
+
+#define NUM_OF_THREADS 4
+#define NVMED_CHUNK 16384
+
+static struct filemap *alloc_cuda_nvme_large_mt(int fd, const char *fname,
+                                             int devfd, struct filemap *fm,
+                                             unsigned long num_blocks,
+                                             struct sector *slist,
+                                             int sector_count)
+{
+    int map_error = 0;
+    struct nvmed_task *tasks;
+    int i;
+    pthread_t threads[NUM_OF_THREADS];
+    struct fifo *nvmed_tasks_fifo;
+    struct nvmed_thread_parameter thread_info;
+    volatile int number_of_remaining_tasks;
+
+    if (cudaMalloc(&fm->data, fm->length) != cudaSuccess) {
+        errno = ENOMEM;
+        goto free_and_fallback;
+    }
+
+    fm->free = free_cuda_nvme_large;
+
+    unsigned long max_lbas = fm->pinbuf->bufsize / 512;
+
+    unsigned char *current = fm->data;
+
+    number_of_remaining_tasks = sector_count;
+    tasks = (struct nvmed_task *)calloc((65536/NVMED_CHUNK)*sector_count, sizeof(struct nvmed_task));
+    nvmed_tasks_fifo = fifo_new(64*(65536/NVMED_CHUNK));
+    thread_info.number_of_remaining_tasks = &number_of_remaining_tasks;
+    thread_info.nvmed_tasks_fifo = nvmed_tasks_fifo;
+
+    for(int i = 0; i < NUM_OF_THREADS; i++)
+    {
+            pthread_create(&threads[i], NULL, nvmed_read_thread, &thread_info);
+    }
+    unsigned long offset = 0, copied = 0, size_of_this_sector=0;
+    int current_task=0;
+    unsigned long remaining_blocks, slba;
+
+    for (int i = 0; i < sector_count; i++) {
+        unsigned long slba = slist[i].slba;
+        unsigned long count = slist[i].count;
+        copied = 0;
+        if(i == sector_count-1)
+            size_of_this_sector = fm->length - offset;
+        else
+            size_of_this_sector = slist[i].count * 512;
+
+        if(i != sector_count-1)
+        {
+            while(count > NVMED_CHUNK)
+            {
+                tasks[current_task].count = NVMED_CHUNK;
+                tasks[current_task].slba = slba;
+                tasks[current_task].devfd = devfd;
+                tasks[current_task].dest = current;
+                tasks[current_task].size = NVMED_CHUNK*512;
+                fifo_push(nvmed_tasks_fifo, &tasks[current_task]);
+                atomic_increment(&number_of_remaining_tasks);
+                current_task++;
+                slba+=NVMED_CHUNK;
+                current+=NVMED_CHUNK*512;
+                copied+=NVMED_CHUNK*512;
+                count-=NVMED_CHUNK;
+            }
+        }
+        tasks[current_task].count = count;
+        tasks[current_task].slba = slba;
+        tasks[current_task].devfd = devfd;
+        tasks[current_task].dest = current;
+        tasks[current_task].size = size_of_this_sector-copied;
+        fifo_push(nvmed_tasks_fifo, &tasks[current_task]);
+        current_task++;
+        offset += size_of_this_sector;
+        current += (size_of_this_sector-copied);
+    }
+    for(int i = 0; i < NUM_OF_THREADS; i++)
+        pthread_join(threads[i], NULL);
+    fm->pinbuf = pinpool_alloc();
+    fifo_free(nvmed_tasks_fifo);
+    free(tasks);
+
+    pinpool_free(fm->pinbuf);
+    fm->pinbuf = NULL;
+
+    return fm;
+
+map_error_and_free:
+    map_error = FILEMAP_FALLBACK_IOCTL_ERROR;
+    cudaFree(fm->data);
+
+free_and_fallback:
+    pinpool_free(fm->pinbuf);
+    free(fm);
+
+    errno = 0;
+    struct filemap *ret = filemap_alloc_cuda(fd, fname);
+    ret->map_error = map_error;
+    return ret;
+}
+
+inline void atomic_decrement(volatile int *pw)
+{
+	  __asm (
+	       "lock\n\t"
+	       "decl %0":
+	       "=m"(*pw): // output (%0)
+	       "m"(*pw): // input (%1)
+	       "cc" // clobbers
+	       );
+}
+
+void *nvmed_read_thread(void *t)
+{
+    struct pin_buf *pinbuf;
+    struct nvmed_task *task;
+    struct nvmed_thread_parameter *thread_info = (struct nvmed_thread_parameter *)t;
+    struct fifo *nvmed_tasks_fifo = thread_info->nvmed_tasks_fifo;
+    volatile int *number_of_remaining_tasks = thread_info->number_of_remaining_tasks;
+    unsigned long offset = 0;
+    pinbuf = pinpool_alloc();
+    while(*number_of_remaining_tasks > 0)
+    {
+        if((task = (struct nvmed_task *)fifo_pop(nvmed_tasks_fifo))!=NULL)
+        {
+            if (nvme_dev_gpu_read(task->devfd, task->slba, task->count, pinbuf, offset))
+            {
+                int map_error = FILEMAP_FALLBACK_IOCTL_ERROR;
+                pinpool_free(pinbuf);
+                fprintf(stderr,"nvmed read error\n");
+                return NULL;
+            }
+            cudaMemcpy(task->dest, pinbuf->address, task->size , cudaMemcpyDeviceToDevice);
+            atomic_decrement(number_of_remaining_tasks);
+        }
+    }
+    pinpool_free(pinbuf);
+    fifo_close(nvmed_tasks_fifo);
+    return NULL;
+}
+
+struct filemap *filemap_alloc_cuda_nvme_mt(int fd, const char *fname)
+{
+    int map_error=0;
+    struct stat st;
+    if (fstat(fd, &st))
+        return NULL;
+
+    struct sector slist[st.st_blocks / (st.st_blksize / 512)];
+
+    int devfd = nvme_dev_find(st.st_dev);
+    if (devfd < 0) {
+        if (devfd == -ENXIO)
+            map_error = FILEMAP_FALLBACK_DEV_NOT_NVME;
+        else
+            map_error = FILEMAP_FALLBACK_NOPERM_DEV;
+        goto fallback;
+    }
+
+    int sector_count = get_sector_list(fd, &st, slist);
+
+    if (sector_count < 0) {
+        map_error = FILEMAP_FALLBACK_NOPERM_FIBMAP;
+        goto fallback;
+    }
+
+    unsigned long num_blocks = (st.st_size + st.st_blksize - 1) / st.st_blksize;
+
+    struct filemap *fm = malloc(sizeof(*fm));
+    if (fm == NULL)
+        return NULL;
+
+    fm->map_error = 0;
+    fm->length = st.st_size;
+    fm->type = FILEMAP_TYPE_CUDA;
+    fm->free = free_cuda_nvme;
+    copy_filename(fm, fname);
+    fm->pinbuf = pinpool_alloc();
+    fm->data = fm->pinbuf->address;
+
+        return alloc_cuda_nvme_large_mt(fd, fname, devfd, fm, num_blocks,
+                                     slist, sector_count);
+
+map_error_and_free:
+    map_error = FILEMAP_FALLBACK_IOCTL_ERROR;
+    pinpool_free(fm->pinbuf);
+    free(fm);
+
+fallback:
+    errno = 0;
+    struct filemap *ret = filemap_alloc_cuda(fd, fname);
+    ret->map_error = map_error;
+    return ret;
 }
