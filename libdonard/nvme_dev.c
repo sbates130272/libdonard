@@ -61,7 +61,7 @@ static int find_dev(dev_t dev)
         if (entry->d_type != DT_UNKNOWN  && entry->d_type != DT_BLK)
             continue;
 
-        struct stat st;
+        struct stat64 st;
         if (fstatat(dirfd(dp), entry->d_name, &st, 0))
             continue;
 
@@ -102,7 +102,7 @@ int nvme_dev_find(dev_t dev)
     return devfd;
 }
 
-int nvme_dev_get_sector_list(int fd, struct stat *st,
+int nvme_dev_get_sector_list(int fd, struct stat64 *st,
                              struct nvme_dev_sector **slist_p,
                              size_t max_size)
 {
@@ -211,7 +211,7 @@ int nvme_dev_gpu_write(int devfd, int slba, int nblocks,
 
 int nvme_dev_read_fd(int fd, void *buf, size_t bufsize)
 {
-    struct stat st;
+    struct stat64 st;
     if (fstat(fd, &st))
         return -1;
 
@@ -270,7 +270,7 @@ int nvme_dev_read_file(const char *fname, void *buf, size_t bufsize)
 
 int nvme_dev_write_fd(int fd, const void *buf, size_t bufsize)
 {
-    struct stat st;
+    struct stat64 st;
     if (fstat(fd, &st))
         return -1;
 

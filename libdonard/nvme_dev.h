@@ -40,7 +40,7 @@ struct nvme_dev_sector {
     unsigned long count;
 };
 
-int nvme_dev_get_sector_list(int fd, struct stat *st,
+int nvme_dev_get_sector_list(int fd, struct stat64 *st,
                              struct nvme_dev_sector **slist,
                              size_t max_size);
 

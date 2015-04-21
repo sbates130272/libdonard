@@ -80,7 +80,7 @@ static void copy_filename(struct filemap *fm, const char *fname)
 
 struct filemap *filemap_alloc_local(int fd, const char *fname)
 {
-    struct stat stats;
+    struct stat64 stats;
     if (fstat(fd, &stats))
         return NULL;
 
@@ -134,7 +134,7 @@ static void free_local_nvme(struct filemap *fm)
 struct filemap *filemap_alloc_local_nvme(int fd, const char *fname)
 {
     int map_error;
-    struct stat st;
+    struct stat64 st;
     if (fstat(fd, &st))
         return NULL;
 
@@ -225,7 +225,7 @@ static void free_cuda(struct filemap *fm)
 
 struct filemap *filemap_alloc_cuda(int fd, const char *fname)
 {
-    struct stat stats;
+    struct stat64 stats;
     if (fstat(fd, &stats))
         return NULL;
 
@@ -354,7 +354,7 @@ static void free_cuda_nvme(struct filemap *fm)
 struct filemap *filemap_alloc_cuda_nvme(int fd, const char *fname)
 {
     int map_error=0;
-    struct stat st;
+    struct stat64 st;
     if (fstat(fd, &st))
         return NULL;
 
@@ -439,7 +439,7 @@ struct filemap *filemap_open_cuda_nvme(const char *fname)
 int filemap_write_cuda_nvme(struct filemap *fmap, int fd)
 {
     int ret;
-    struct stat st;
+    struct stat64 st;
 
     if (fmap->type != FILEMAP_TYPE_CUDA) {
         errno = EINVAL;
