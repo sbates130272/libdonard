@@ -129,9 +129,11 @@ int nvme_dev_get_sector_list(int fd, struct stat *st,
         }
 
         //Seems we can't transfer more than 65536 LBAs at once so
-        // in that case we split it into multiple transfers
+        // in that case we split it into multiple transfers. Intel
+        // cards can only transfer ~256 blocks at once so that's
+        // the new limit.
         if (i != 0 && blknum * blk_size == slist->slba + slist->count &&
-            slist->count + blk_size <= 65536) {
+            slist->count + blk_size <= 256) {
             slist->count += blk_size;
             continue;
         }
