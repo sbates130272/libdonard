@@ -90,7 +90,10 @@ static int test_write(const char *fname)
 
     int fd = open(fname, O_RDONLY);
     void *data2 = malloc(wrote);
-    read(fd, data2, wrote);
+    int nread = read(fd, data2, wrote);
+    if (nread != wrote)
+        return -1;
+
     close(fd);
 
     int ret = memcmp(data, data2, wrote);

@@ -49,7 +49,9 @@ void *producer(void *arg)
     struct timespec t = {0};
 
     for (int i = p->start; i < p->end; i++){
-        read(random_fd, &t.tv_nsec, sizeof(t.tv_nsec));
+        if (read(random_fd, &t.tv_nsec, sizeof(t.tv_nsec)) <= 0)
+            continue;
+
         t.tv_nsec &= 0xFFFFF;
         nanosleep(&t, NULL);
 
@@ -79,7 +81,9 @@ void *consumer(void *arg)
         sum += *ii;
         free(ii);
 
-        read(random_fd, &t.tv_nsec, sizeof(t.tv_nsec));
+        if (read(random_fd, &t.tv_nsec, sizeof(t.tv_nsec)) <= 0)
+            continue;
+
         t.tv_nsec &= 0xFFFFFF;
         nanosleep(&t, NULL);
     }

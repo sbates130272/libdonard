@@ -108,7 +108,8 @@ void perfstats_disable(void)
 static uint64_t readcounter(int i)
 {
     uint64_t ret;
-    read(fds[i], &ret, sizeof(ret));
+    if (read(fds[i], &ret, sizeof(ret)) != sizeof(ret))
+        return -1;
 
     return ret;
 }
