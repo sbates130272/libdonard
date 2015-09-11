@@ -161,7 +161,11 @@ static void *save_thread(void *arg)
 
         if (st->no_direct_dma) {
             memcpy(tmpbuf, st->buf, st->bufsize);
-            write(fd, tmpbuf, st->bufsize);
+
+            if (write(fd, tmpbuf, st->bufsize) != st->bufsize) {
+                //pass
+            }
+
             fsync(fd);
         } else {
             nvme_dev_write_fd(fd, st->buf, st->bufsize);
@@ -192,11 +196,11 @@ static void print_cpu_time(void)
             utils_timeval_to_secs(&u.ru_stime));
 }
 
-static void delete_output_dir_files(const char *dir)
+static int delete_output_dir_files(const char *dir)
 {
     char cmd[MAX_INPUT];
     sprintf(cmd, "rm -rf %s/*.dat", dir);
-    system(cmd);
+    return system(cmd);
 }
 
 struct mmap_buf {

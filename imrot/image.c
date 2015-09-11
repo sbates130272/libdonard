@@ -628,7 +628,8 @@ int image_save(struct image *img, int flags)
     }
 
     lseek(fd, offset, SEEK_SET);
-    write(fd, src, bufsize(img));
+    if (write(fd, src, bufsize(img)) != bufsize(img))
+        return -1;
 
     //In order to be fair with the donard version force syncing the file to disk
     fsync(fd);

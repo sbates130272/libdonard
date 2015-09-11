@@ -146,7 +146,11 @@ static void write_no_dma(struct pin_buf *buf, int fd)
         return;
 
     cudaMemcpy(cpubuf, buf->address, buf->bufsize, cudaMemcpyDeviceToHost);
-    write(fd, cpubuf, buf->bufsize);
+
+    if (write(fd, cpubuf, buf->bufsize)) {
+        //pass
+    }
+
     fsync(fd);
 
     free(cpubuf);
@@ -214,11 +218,11 @@ static void print_cpu_time(void)
             utils_timeval_to_secs(&u.ru_stime));
 }
 
-static void delete_output_dir_files(const char *dir)
+static int delete_output_dir_files(const char *dir)
 {
     char cmd[MAX_INPUT];
     sprintf(cmd, "rm -rf %s/*.dat", dir);
-    system(cmd);
+    return system(cmd);
 }
 
 int main(int argc, char *argv[])
