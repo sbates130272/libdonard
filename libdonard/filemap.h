@@ -88,6 +88,7 @@ struct filemap *filemap_alloc_cuda(int fd, const char *fname);
 
 struct filemap *filemap_open_cuda_nvme(const char *filename);
 struct filemap *filemap_alloc_cuda_nvme(int fd, const char *fname);
+struct filemap *filemap_alloc_cuda_nvme_mt(int fd, const char *fname);
 
 int filemap_write_cuda_nvme(struct filemap *fmap_src, int fd_dst);
 

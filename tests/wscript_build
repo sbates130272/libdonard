@@ -80,6 +80,11 @@ bld.program(features="test" if os.path.exists("/mnt/princeton/random_test3") els
             use="donard_static",
             install_path=None)
 
+bld.program(features="c cxxprogram test",
+        source="ucsd_bench.cu",
+        target="ucsd_bench",
+        use="donard",
+        install_path=None)
 
 if "LIB_OPENCL" in bld.env:
     bld.program(features="test",
